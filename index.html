@@ -367,7 +367,7 @@ if (!configured) {
     knownIds = null;
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const list = snap.docs.map((d) => ({ ...d.data() ,id: d.id }));
       const fresh = knownIds ? list.filter((o) => !knownIds.has(o.id) && o.status === "Yeni") : [];
       knownIds = new Set(list.map((o) => o.id));
       orders = list;
