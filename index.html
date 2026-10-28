@@ -81,6 +81,34 @@
   .actions button.go { background: var(--green); color: #fff; border-color: var(--green); }
   .empty { color: var(--muted); text-align: center; padding: 40px 0; }
 
+  /* ---- menü ---- */
+  .navbtn.sel { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .banner.ok { background: var(--bg); color: var(--green); border-color: var(--green); }
+  h2.cat { margin: 22px 0 10px; font-size: 18px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .toolbar .primary { width: auto; margin: 0; padding: 10px 16px; }
+  .prod { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 12px; box-shadow: var(--shadow); }
+  .prod.off { opacity: .6; }
+  .pimg { width: 88px; height: 88px; border-radius: 10px; object-fit: cover; flex: none; background: var(--bg); }
+  .pimg.big { width: 140px; height: 140px; }
+  .noimg { display: grid; place-items: center; font-size: 30px; }
+  .pbody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .pdesc { color: var(--muted); font-size: 14px; }
+  .prod .total { white-space: nowrap; }
+  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--card); color: var(--text); width: min(520px, calc(100vw - 24px)); }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  #pform, #iform { padding: 20px; }
+  #pform h2, #iform h2 { margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 6px 0 10px; }
+  textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font: 13px/1.4 ui-monospace, Consolas, monospace; resize: vertical; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dact { display: flex; gap: 8px; margin-top: 18px; }
+  .dact .primary { margin: 0; flex: 1; }
+  .dact .btn { padding: 12px 16px; }
+  .chk { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 16px; color: var(--text); }
+  input[type=checkbox] { width: auto; }
+  .prevrow { display: flex; gap: 14px; align-items: center; margin-top: 8px; }
+
   /* ---- ses kilidi ---- */
   #unlock { position: fixed; inset: 0; z-index: 20; background: rgba(0,0,0,.72); display: grid; place-items: center; padding: 16px; }
   #unlock .box { background: var(--card); border-radius: 14px; padding: 28px; max-width: 420px; text-align: center; }
@@ -118,13 +146,15 @@
 
 <section id="app" class="hidden">
   <header>
-    <h1>🍕 Pizza Majör – Siparişler</h1>
+    <h1>🍕 Pizza Majör</h1>
+    <button class="btn navbtn sel" data-view="orders" type="button">Siparişler</button>
+    <button class="btn navbtn" data-view="menu" type="button">Menü</button>
     <span class="conn"><span class="dot" id="dot"></span><span id="connText">Bağlanıyor…</span></span>
     <button class="btn" id="soundBtn" type="button">🔊 Ses açık</button>
     <button class="btn" id="testBtn" type="button">Sesi dene</button>
     <button class="btn" id="logoutBtn" type="button">Çıkış</button>
   </header>
-  <main>
+  <main id="ordersView">
     <div class="banner hidden" id="banner"></div>
     <div class="stats">
       <div class="stat new"><b id="sNew">0</b><span>Yeni sipariş</span></div>
@@ -140,7 +170,54 @@
     </div>
     <div class="grid" id="list"></div>
   </main>
+  <main id="menuView" class="hidden">
+    <div class="banner hidden" id="menuBanner"></div>
+    <div class="toolbar">
+      <button class="primary" id="newBtn" type="button">＋ Yeni ürün</button>
+      <button class="btn" id="impBtn" type="button">Eski menüyü içe aktar</button>
+    </div>
+    <div id="menuList"></div>
+  </main>
 </section>
+
+<dialog id="pdlg">
+  <form id="pform">
+    <h2 id="pTitle">Yeni ürün</h2>
+    <label for="pName">Ürün adı</label>
+    <input id="pName" maxlength="60" required>
+    <label for="pDesc">Açıklama</label>
+    <input id="pDesc" maxlength="140">
+    <div class="two">
+      <div><label for="pPrice">Fiyat (₺)</label><input id="pPrice" type="number" min="0" step="1" required></div>
+      <div><label for="pSort">Sıra (küçük önce)</label><input id="pSort" type="number" step="1"></div>
+    </div>
+    <label for="pCat">Kategori</label>
+    <input id="pCat" list="catList" maxlength="40" required placeholder="Pizzalar, İçecekler…">
+    <datalist id="catList"></datalist>
+    <label for="pFile">Fotoğraf</label>
+    <input id="pFile" type="file" accept="image/*">
+    <div class="prevrow"><div id="pPrev"></div><button class="btn hidden" id="pClear" type="button">Fotoğrafı kaldır</button></div>
+    <label class="chk"><input id="pActive" type="checkbox" checked> Satışta (uygulamada görünsün)</label>
+    <div class="err hidden" id="pErr"></div>
+    <div class="dact">
+      <button class="primary" id="pSave" type="submit">Kaydet</button>
+      <button class="btn" id="pCancel" type="button">Vazgeç</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="idlg">
+  <form id="iform">
+    <h2>Eski menüyü içe aktar</h2>
+    <p class="hint">GitHub'da <b>MenuData.kt</b> dosyasını aç, içindeki her şeyi kopyalayıp aşağıya yapıştır. Ürünler fotoğrafsız eklenir, fotoğrafları sonra tek tek ekleyebilirsin.</p>
+    <textarea id="iText" rows="10" placeholder='Product("p1", "Margarita", "Domates sosu, mozzarella", 220, "Pizzalar"),'></textarea>
+    <div class="err hidden" id="iErr"></div>
+    <div class="dact">
+      <button class="primary" id="iGo" type="submit">İçe aktar</button>
+      <button class="btn" id="iCancel" type="button">Vazgeç</button>
+    </div>
+  </form>
+</dialog>
 
 <div id="unlock" class="hidden">
   <div class="box">
@@ -154,7 +231,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc }
+import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, setDoc, addDoc, deleteDoc }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const STATUSES = ["Yeni", "Hazırlanıyor", "Yolda", "Teslim Edildi", "İptal"];
@@ -312,6 +389,121 @@ $("unlockBtn").addEventListener("click", () => {
 
 setInterval(() => { if (orders.length) renderList(); }, 30000);   // "x dk önce" yazılarını tazele
 
+// ---------- menü (ortak yardımcılar) ----------
+let products = [];
+let unsubP = null;
+let editing = { id: null, image: "" };
+const b64ok = (x) => typeof x === "string" && /^[A-Za-z0-9+/=]+$/.test(x);
+
+function showView(v) {
+  $("ordersView").classList.toggle("hidden", v !== "orders");
+  $("menuView").classList.toggle("hidden", v !== "menu");
+  document.querySelectorAll(".navbtn").forEach((b) => b.classList.toggle("sel", b.dataset.view === v));
+}
+document.querySelectorAll(".navbtn").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
+
+function menuMsg(text, ok) {
+  const el = $("menuBanner");
+  el.textContent = text || "";
+  el.classList.toggle("hidden", !text);
+  el.classList.toggle("ok", !!ok);
+}
+
+const thumb = (p, cls) => (p.image && b64ok(p.image))
+  ? `<img class="${cls}" alt="" src="data:image/jpeg;base64,${p.image}">`
+  : `<div class="${cls} noimg">🍕</div>`;
+
+function renderMenu() {
+  const cats = [...new Set(products.map((p) => p.category))];
+  $("catList").innerHTML = cats.map((c) => `<option value="${esc(c)}"></option>`).join("");
+  if (!products.length) {
+    $("menuList").innerHTML = `<div class="empty">Menüde henüz ürün yok. Mevcut menünü <b>Eski menüyü içe aktar</b> ile taşıyabilir ya da <b>Yeni ürün</b> ekleyebilirsin.<br>Menü boşken telefon uygulaması kendi içindeki menüyü göstermeye devam eder.</div>`;
+    return;
+  }
+  $("menuList").innerHTML = cats.map((c) => {
+    const items = products.filter((p) => p.category === c);
+    return `<h2 class="cat">${esc(c)}</h2><div class="grid">` + items.map((p) => `
+      <article class="prod ${p.active === false ? "off" : ""}">
+        ${thumb(p, "pimg")}
+        <div class="pbody">
+          <div class="row"><span class="name">${esc(p.name)}${p.active === false ? ' <span class="badge">Kapalı</span>' : ""}</span><span class="total">${esc(tl(p.price))}</span></div>
+          <div class="pdesc">${esc(p.desc)}</div>
+          <div class="actions">
+            <button type="button" data-act="edit" data-id="${esc(p.id)}">Düzenle</button>
+            <button type="button" data-act="toggle" data-id="${esc(p.id)}">${p.active === false ? "Satışa aç" : "Satıştan kaldır"}</button>
+            <button type="button" data-act="del" data-id="${esc(p.id)}">Sil</button>
+          </div>
+        </div>
+      </article>`).join("") + `</div>`;
+  }).join("");
+}
+
+function updatePreview() {
+  $("pPrev").innerHTML = thumb({ image: editing.image }, "pimg big");
+  $("pClear").classList.toggle("hidden", !editing.image);
+}
+
+function perr(text) {
+  $("pErr").textContent = text || "";
+  $("pErr").classList.toggle("hidden", !text);
+}
+
+function ierr(text) {
+  $("iErr").textContent = text || "";
+  $("iErr").classList.toggle("hidden", !text);
+}
+
+function openDialog(p) {
+  editing = { id: p ? p.id : null, image: p && p.image && b64ok(p.image) ? p.image : "" };
+  $("pTitle").textContent = p ? "Ürünü düzenle" : "Yeni ürün";
+  $("pName").value = p ? p.name : "";
+  $("pDesc").value = p ? (p.desc || "") : "";
+  $("pPrice").value = p ? p.price : "";
+  $("pCat").value = p ? p.category : "";
+  $("pSort").value = p ? (p.sort || 0) : products.reduce((m, x) => Math.max(m, x.sort || 0), 0) + 10;
+  $("pActive").checked = p ? p.active !== false : true;
+  $("pFile").value = "";
+  perr("");
+  updatePreview();
+  $("pdlg").showModal();
+}
+
+// Fotoğrafı küçültüp JPEG'e çevirir (Firestore'da ~100-200 KB kalsın diye)
+async function fileToJpegBase64(file) {
+  const bmp = await createImageBitmap(file);
+  let max = 640, quality = 0.8, out = "";
+  for (let i = 0; i < 6; i++) {
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(bmp.width * scale));
+    c.height = Math.max(1, Math.round(bmp.height * scale));
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    out = c.toDataURL("image/jpeg", quality).split(",")[1];
+    if (out.length < 200000) break;
+    max = Math.round(max * 0.8);
+    quality = Math.max(0.5, quality - 0.1);
+  }
+  return out;
+}
+
+$("pFile").addEventListener("change", async () => {
+  const f = $("pFile").files[0];
+  if (!f) return;
+  perr("");
+  try {
+    editing.image = await fileToJpegBase64(f);
+    updatePreview();
+  } catch (e) {
+    perr("Bu fotoğraf açılamadı. JPG veya PNG dene.");
+  }
+});
+$("pClear").addEventListener("click", () => { editing.image = ""; $("pFile").value = ""; updatePreview(); });
+$("pCancel").addEventListener("click", () => $("pdlg").close());
+$("newBtn").addEventListener("click", () => openDialog(null));
+
 // ---------- Firebase ----------
 if (!configured) {
   $("login").classList.remove("hidden");
@@ -363,11 +555,82 @@ if (!configured) {
     }
   });
 
+  // ---------- menü işlemleri ----------
+  $("pform").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = $("pName").value.trim();
+    const category = $("pCat").value.trim();
+    const price = Math.round(Number($("pPrice").value));
+    if (!name || !category || !Number.isFinite(price) || price < 0) { perr("Ürün adı, kategori ve fiyat gerekli."); return; }
+    const data = {
+      name, desc: $("pDesc").value.trim(), price, category,
+      image: editing.image, active: $("pActive").checked,
+      sort: Math.round(Number($("pSort").value)) || 0
+    };
+    $("pSave").disabled = true;
+    try {
+      if (editing.id) await setDoc(doc(db, "products", editing.id), data);
+      else await addDoc(collection(db, "products"), data);
+      $("pdlg").close();
+      menuMsg("Kaydedildi.", true);
+    } catch (err) {
+      perr("Kaydedilemedi (" + ((err && err.code) || (err && err.message) || "hata") + ")");
+    } finally {
+      $("pSave").disabled = false;
+    }
+  });
+
+  $("menuList").addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-act]");
+    if (!b) return;
+    const p = products.find((x) => x.id === b.dataset.id);
+    if (!p) return;
+    try {
+      if (b.dataset.act === "edit") { openDialog(p); return; }
+      if (b.dataset.act === "toggle") await updateDoc(doc(db, "products", p.id), { active: p.active === false });
+      if (b.dataset.act === "del") {
+        if (!confirm(`"${p.name}" ürününü silmek istediğine emin misin?`)) return;
+        await deleteDoc(doc(db, "products", p.id));
+      }
+      menuMsg("");
+    } catch (err) {
+      menuMsg("İşlem başarısız (" + ((err && err.code) || (err && err.message) || "hata") + ")");
+    }
+  });
+
+  $("impBtn").addEventListener("click", () => { $("iText").value = ""; ierr(""); $("idlg").showModal(); });
+  $("iCancel").addEventListener("click", () => $("idlg").close());
+  $("iform").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const re = /Product\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*(\d+)\s*,\s*"([^"]*)"\s*\)/g;
+    const found = [...$("iText").value.matchAll(re)].filter((m) => m[1] && !m[1].includes("/"));
+    if (!found.length) {
+      ierr("Ürün bulunamadı. MenuData.kt dosyasının içeriğini baştan sona kopyalayıp yapıştırdığından emin ol.");
+      return;
+    }
+    const base = products.reduce((m, x) => Math.max(m, x.sort || 0), 0);
+    $("iGo").disabled = true;
+    try {
+      for (const [i, m] of found.entries()) {
+        // belge içine "id" alanı yazma; numara belge adı olur. merge: var olan fotoğraf silinmesin
+        await setDoc(doc(db, "products", m[1]),
+          { name: m[2], desc: m[3], price: Number(m[4]), category: m[5], active: true, sort: base + (i + 1) * 10 },
+          { merge: true });
+      }
+      $("idlg").close();
+      menuMsg(`${found.length} ürün içe aktarıldı. Şimdi fotoğraflarını ekleyebilirsin.`, true);
+    } catch (err) {
+      ierr("Aktarılamadı (" + ((err && err.code) || (err && err.message) || "hata") + ")");
+    } finally {
+      $("iGo").disabled = false;
+    }
+  });
+
   function start() {
     knownIds = null;
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ ...d.data() ,id: d.id }));
+      const list = snap.docs.map((d) => ({ ...d.data(), id: d.id }));   // belge numarası, belge içindeki boş "id" alanının üstüne yazılmalı
       const fresh = knownIds ? list.filter((o) => !knownIds.has(o.id) && o.status === "Yeni") : [];
       knownIds = new Set(list.map((o) => o.id));
       orders = list;
@@ -381,6 +644,14 @@ if (!configured) {
         ? "Siparişleri okuma izni yok. Firestore kurallarını ve yönetici hesabını kontrol et."
         : "Siparişler yüklenemedi: " + ((err && err.message) || "bilinmeyen hata"));
     });
+    unsubP = onSnapshot(query(collection(db, "products")), (snap) => {
+      products = snap.docs.map((d) => ({ ...d.data(), id: d.id })).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+      renderMenu();
+    }, (err) => {
+      menuMsg(err && err.code === "permission-denied"
+        ? "Menü okunamadı: Firestore kurallarına 'products' bölümünü eklemen gerekiyor."
+        : "Menü okunamadı: " + ((err && err.message) || "hata"));
+    });
     // Cevaplanmayan yeni sipariş varken tekrar tekrar uyar
     remindTimer = setInterval(() => {
       const n = orders.filter((o) => o.status === "Yeni").length;
@@ -391,7 +662,9 @@ if (!configured) {
   function stop() {
     if (unsub) { unsub(); unsub = null; }
     if (remindTimer) { clearInterval(remindTimer); remindTimer = null; }
-    orders = []; knownIds = null;
+    if (unsubP) { unsubP(); unsubP = null; }
+    orders = []; knownIds = null; products = [];
+    showView("orders");
   }
 
   onAuthStateChanged(auth, (user) => {
