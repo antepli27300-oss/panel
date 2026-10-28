@@ -448,6 +448,46 @@ function perr(text) {
   $("pErr").classList.toggle("hidden", !text);
 }
 
+// MenuData.kt içindeki Product(...) satırlarını okur. Açıklamalı (5 değer) ve açıklamasız (4 değer) satırların ikisini de kabul eder.
+function parseProducts(text) {
+  const out = [];
+  let i = 0;
+  while ((i = text.indexOf("Product(", i)) !== -1) {
+    i += 8;
+    const strs = [];
+    let num = null;
+    while (i < text.length) {
+      const c = text[i];
+      if (c === '"') {
+        let j = i + 1, str = "";
+        while (j < text.length && text[j] !== '"') {
+          if (text[j] === "\\" && j + 1 < text.length) { str += text[j + 1]; j += 2; } else { str += text[j++]; }
+        }
+        strs.push(str);
+        i = j + 1;
+      } else if (c === ")") {
+        i++;
+        break;
+      } else if (/\d/.test(c)) {
+        let j = i;
+        while (j < text.length && /\d/.test(text[j])) j++;
+        if (num === null) num = Number(text.slice(i, j));
+        i = j;
+      } else {
+        i++;
+      }
+    }
+    if (strs.length >= 3 && num !== null) {
+      out.push({
+        id: strs[0].trim(), name: strs[1].trim(),
+        desc: strs.length >= 4 ? strs[2].trim() : "",
+        category: strs[strs.length - 1].trim(), price: num
+      });
+    }
+  }
+  return out;
+}
+
 function ierr(text) {
   $("iErr").textContent = text || "";
   $("iErr").classList.toggle("hidden", !text);
@@ -602,19 +642,27 @@ if (!configured) {
   $("iCancel").addEventListener("click", () => $("idlg").close());
   $("iform").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const re = /Product\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*(\d+)\s*,\s*"([^"]*)"\s*\)/g;
-    const found = [...$("iText").value.matchAll(re)].filter((m) => m[1] && !m[1].includes("/"));
+    const text = $("iText").value;
+    const seen = (text.match(/Product\(/g) || []).length;
+    const found = parseProducts(text).filter((p) => p.id && !p.id.includes("/"));
     if (!found.length) {
       ierr("Ürün bulunamadı. MenuData.kt dosyasının içeriğini baştan sona kopyalayıp yapıştırdığından emin ol.");
       return;
     }
+    const ids = found.map((p) => p.id);
+    const dup = ids.find((x, k) => ids.indexOf(x) !== k);
+    if (dup) {
+      ierr(`"${dup}" numarası birden fazla üründe kullanılmış. MenuData.kt'de her ürünün numarası (ilk tırnaklı yazı) farklı olmalı.`);
+      return;
+    }
+    if (found.length < seen && !confirm(`${seen} ürün satırından sadece ${found.length} tanesi okunabildi. Yine de ${found.length} ürün aktarılsın mı?`)) return;
     const base = products.reduce((m, x) => Math.max(m, x.sort || 0), 0);
     $("iGo").disabled = true;
     try {
-      for (const [i, m] of found.entries()) {
+      for (const [i, p] of found.entries()) {
         // belge içine "id" alanı yazma; numara belge adı olur. merge: var olan fotoğraf silinmesin
-        await setDoc(doc(db, "products", m[1]),
-          { name: m[2], desc: m[3], price: Number(m[4]), category: m[5], active: true, sort: base + (i + 1) * 10 },
+        await setDoc(doc(db, "products", p.id),
+          { name: p.name, desc: p.desc, price: p.price, category: p.category, active: true, sort: base + (i + 1) * 10 },
           { merge: true });
       }
       $("idlg").close();
